@@ -71,6 +71,24 @@ class RelatorioMensal(db.Model):
     quantidade_vendida = db.Column(db.Integer, nullable=False)
     soma_mensal = db.Column(db.Float, nullable=False)
 
+with app.app_context():
+    # Verifica se a coluna `mes_numero` já existe na tabela `venda`
+    inspector = db.inspect(db.engine)
+    columns = inspector.get_columns('venda')
+    column_names = [column['name'] for column in columns]
+
+    if 'mes_numero' not in column_names:
+        # Adiciona a coluna `mes_numero` à tabela `venda`
+        db.engine.execute('ALTER TABLE venda ADD COLUMN mes_numero INTEGER')
+
+        # Preenche o campo `mes_numero` para os registros existentes
+        vendas = Venda.query.all()
+        for venda in vendas:
+            venda.mes_numero = venda.data.month
+        db.session.commit()
+
+        print("Coluna 'mes_numero' adicionada e preenchida com sucesso!")
+
 # Criação do Banco e das Tabelas
 with app.app_context():
     db.create_all()
