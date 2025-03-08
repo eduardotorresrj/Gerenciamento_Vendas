@@ -1,14 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 # noinspection PyUnresolvedReferences
 from datetime import datetime, timedelta, timezone, date
-import os
-import locale
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+import locale
+import os
+
+# Tenta configurar o locale pt_BR.UTF-8
+try:
+    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
+except locale.Error:
+    # Se não estiver disponível, usa um locale padrão
+    locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')
 
 
-# Configura o idioma para português do Brasil
-locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
 app: Flask = Flask(__name__)
 app.secret_key = os.urandom(24)
