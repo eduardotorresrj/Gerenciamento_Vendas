@@ -281,6 +281,35 @@ def relatorio_mensal():
     )
 
 
+from datetime import datetime, timedelta
+
+@app.route('/relatorio_mensal_anterior')
+def relatorio_mensal_anterior():
+    # Obter mês e ano anteriores
+    hoje = datetime.today()
+    primeiro_dia_do_mes_atual = hoje.replace(day=1)
+    ultimo_dia_do_mes_anterior = primeiro_dia_do_mes_atual - timedelta(days=1)
+    mes_anterior = ultimo_dia_do_mes_anterior.strftime('%B').capitalize()  # Exemplo: "Dezembro"
+    ano_anterior = ultimo_dia_do_mes_anterior.year
+
+    # Filtrar vendas do mês anterior
+    vendas = Venda.query.options(joinedload(Venda.produto_relacionado)).filter_by(mes=mes_anterior, ano=ano_anterior).all()
+
+    # Calcular totais
+    soma_mensal = sum(venda.total for venda in vendas)
+    quantidade_mensal = sum(venda.quantidade for venda in vendas)
+
+    # Título do relatório
+    titulo_mensal = f"{mes_anterior} {ano_anterior}"  # Exemplo: "Dezembro 2024"
+
+    return render_template(
+        'relatorio_mensal.html',
+        vendas_do_mes=vendas,
+        soma_mensal=soma_mensal,
+        quantidade_mensal=quantidade_mensal,
+        titulo_mensal=titulo_mensal
+    )
+
 
 @app.route('/relatorios_historicos')
 def relatorios_historicos():
