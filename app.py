@@ -1,16 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-# noinspection PyUnresolvedReferences
-from datetime import datetime, timedelta, timezone, date
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 import os
-import locale
+from sqlalchemy.orm import joinedload
 
-
-locale.setlocale(locale.LC_TIME, 'C.UTF-8')  # Usar um locale padrão disponível
-
-
-app: Flask = Flask(__name__)
+app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # Configuração do Banco de Dados
@@ -19,12 +14,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# Lista de meses em português para evitar problemas com locale
+MESES = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+]
+
 # Modelo de Usuário
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     senha = db.Column(db.String(150), nullable=False)
 
+# Modelo de Produto
 class Produto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
@@ -32,15 +34,15 @@ class Produto(db.Model):
     preco = db.Column(db.Float, nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
     quantidade_inicial = db.Column(db.Integer)
-    linha = db.Column(db.String(100), nullable=False)  # Adicionando o campo linha
+    linha = db.Column(db.String(100), nullable=False)
 
     def __repr__(self):
         return f'<Produto {self.nome}>'
 
-
+# Modelo de Venda
 class Venda(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=False)  # Chave estrangeira
+    produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
     preco = db.Column(db.Float, nullable=False)
     total = db.Column(db.Float, nullable=False)
@@ -114,8 +116,8 @@ def adicionar_produto():
         flash('Produto adicionado com sucesso!', 'success')
         return redirect(url_for('index'))
 
-    linhas = db.session.query(Produto.linha).distinct().all()  # Pega as linhas distintas
-    linhas = [l[0] for l in linhas]  # Extrai o valor de linha de cada tupla
+    linhas = db.session.query(Produto.linha).distinct().all()
+    linhas = [l[0] for l in linhas]
     return render_template('adicionar_produto.html', linhas=linhas)
 
 
@@ -172,22 +174,22 @@ def editar_produto(produto_id):
     return render_template('editar_produto.html', produto=produto)
 
 
+# Vender produto
 @app.route('/vender_produto/<int:produto_id>', methods=['GET', 'POST'])
 def vender_produto(produto_id):
     produto = Produto.query.get_or_404(produto_id)
     estoque_inicial = produto.quantidade
-    hoje = datetime.today().date()  # Data de hoje para passar ao template
+    hoje = datetime.today().date()
 
     if request.method == 'POST':
         quantidade_venda = int(request.form['quantidade_venda'])
-        data_venda_str = request.form.get('data_venda', '').strip()  # Pega a data (se existir)
+        data_venda_str = request.form.get('data_venda', '').strip()
 
         if quantidade_venda > produto.quantidade:
             flash('Quantidade insuficiente em estoque!', 'danger')
         else:
             produto.quantidade -= quantidade_venda
 
-            # Se a data foi informada, converte corretamente
             if data_venda_str:
                 try:
                     data_venda = datetime.strptime(data_venda_str, "%Y-%m-%d").date()
@@ -195,16 +197,20 @@ def vender_produto(produto_id):
                     flash("Data inválida! Use o formato correto (AAAA-MM-DD).", "danger")
                     return redirect(url_for('vender_produto', produto_id=produto.id))
             else:
-                data_venda = hoje  # Usa a data de hoje se não for informada
+                data_venda = hoje
+
+            # Usa a lista de meses em português
+            mes = MESES[data_venda.month - 1]
+            ano = data_venda.year
 
             venda = Venda(
                 produto_id=produto.id,
                 quantidade=quantidade_venda,
                 preco=produto.preco,
                 total=quantidade_venda * produto.preco,
-                data=data_venda,  # Agora garantimos que a data correta será registrada
-                mes=data_venda.strftime('%B').capitalize(),
-                ano=data_venda.year
+                data=data_venda,
+                mes=mes,
+                ano=ano
             )
             db.session.add(venda)
             db.session.commit()
@@ -212,16 +218,7 @@ def vender_produto(produto_id):
             flash('Venda registrada com sucesso!', 'success')
             return redirect(url_for('index'))
 
-    return render_template(
-        'vender_produto.html',
-        produto=produto,
-        estoque_inicial=estoque_inicial,
-        hoje=hoje  # Passa a data de hoje para o template
-    )
-
-
-
-
+    return render_template('vender_produto.html', produto=produto, estoque_inicial=estoque_inicial, hoje=hoje)
 
 
 
@@ -254,24 +251,18 @@ def relatorio_diario():
 
 
 
-# noinspection PyTypeChecker
+# Relatório Mensal
 @app.route('/relatorio_mensal')
 def relatorio_mensal():
-    # Obter mês e ano atuais
     hoje = datetime.today()
-    mes = hoje.strftime('%B').capitalize()  # Exemplo: "Janeiro"
+    mes = MESES[hoje.month - 1]  # Usa a lista de meses em português
     ano = hoje.year
 
-    # Filtrar vendas do mês atual
     vendas = Venda.query.options(joinedload(Venda.produto_relacionado)).filter_by(mes=mes, ano=ano).all()
-
-    # Calcular totais
     soma_mensal = sum(venda.total for venda in vendas)
     quantidade_mensal = sum(venda.quantidade for venda in vendas)
 
-    # Título do relatório
-    titulo_mensal = f"{mes} {ano}"  # Exemplo: "Janeiro 2025"
-
+    titulo_mensal = f"{mes} {ano}"
     return render_template(
         'relatorio_mensal.html',
         vendas_do_mes=vendas,
@@ -283,25 +274,20 @@ def relatorio_mensal():
 
 from datetime import datetime, timedelta
 
+# Relatório Mensal Anterior
 @app.route('/relatorio_mensal_anterior')
 def relatorio_mensal_anterior():
-    # Obter mês e ano anteriores
     hoje = datetime.today()
     primeiro_dia_do_mes_atual = hoje.replace(day=1)
     ultimo_dia_do_mes_anterior = primeiro_dia_do_mes_atual - timedelta(days=1)
-    mes_anterior = ultimo_dia_do_mes_anterior.strftime('%B').capitalize()  # Exemplo: "Dezembro"
+    mes_anterior = MESES[ultimo_dia_do_mes_anterior.month - 1]  # Usa a lista de meses
     ano_anterior = ultimo_dia_do_mes_anterior.year
 
-    # Filtrar vendas do mês anterior
     vendas = Venda.query.options(joinedload(Venda.produto_relacionado)).filter_by(mes=mes_anterior, ano=ano_anterior).all()
-
-    # Calcular totais
     soma_mensal = sum(venda.total for venda in vendas)
     quantidade_mensal = sum(venda.quantidade for venda in vendas)
 
-    # Título do relatório
-    titulo_mensal = f"{mes_anterior} {ano_anterior}"  # Exemplo: "Dezembro 2024"
-
+    titulo_mensal = f"{mes_anterior} {ano_anterior}"
     return render_template(
         'relatorio_mensal.html',
         vendas_do_mes=vendas,
