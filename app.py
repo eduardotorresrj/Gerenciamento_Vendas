@@ -47,7 +47,8 @@ class Venda(db.Model):
     preco = db.Column(db.Float, nullable=False)
     total = db.Column(db.Float, nullable=False)
     data = db.Column(db.Date, nullable=False)
-    mes = db.Column(db.String(20), nullable=False)
+    mes_numero = db.Column(db.Integer, nullable=False)  # Novo campo: número do mês (1 a 12)
+    mes = db.Column(db.String(20), nullable=False)  # Mantenha o campo atual para compatibilidade
     ano = db.Column(db.Integer, nullable=False)
 
     produto_relacionado = db.relationship('Produto')
@@ -174,7 +175,6 @@ def editar_produto(produto_id):
     return render_template('editar_produto.html', produto=produto)
 
 
-# Vender produto
 @app.route('/vender_produto/<int:produto_id>', methods=['GET', 'POST'])
 def vender_produto(produto_id):
     produto = Produto.query.get_or_404(produto_id)
@@ -199,9 +199,9 @@ def vender_produto(produto_id):
             else:
                 data_venda = hoje
 
-            # Usa a lista de meses em português
-            mes = MESES[data_venda.month - 1]
-            ano = data_venda.year
+            # Salva o número do mês (1 a 12) e o nome do mês em português
+            mes_numero = data_venda.month
+            mes = MESES[mes_numero - 1]  # Usa a lista de meses em português
 
             venda = Venda(
                 produto_id=produto.id,
@@ -209,8 +209,9 @@ def vender_produto(produto_id):
                 preco=produto.preco,
                 total=quantidade_venda * produto.preco,
                 data=data_venda,
-                mes=mes,
-                ano=ano
+                mes_numero=mes_numero,  # Novo campo
+                mes=mes,  # Mantido para compatibilidade
+                ano=data_venda.year
             )
             db.session.add(venda)
             db.session.commit()
@@ -251,14 +252,15 @@ def relatorio_diario():
 
 
 
-# Relatório Mensal
 @app.route('/relatorio_mensal')
 def relatorio_mensal():
     hoje = datetime.today()
-    mes = MESES[hoje.month - 1]  # Usa a lista de meses em português
+    mes_numero = hoje.month  # Número do mês (1 a 12)
+    mes = MESES[mes_numero - 1]  # Nome do mês em português
     ano = hoje.year
 
-    vendas = Venda.query.options(joinedload(Venda.produto_relacionado)).filter_by(mes=mes, ano=ano).all()
+    # Filtra pelo número do mês e ano
+    vendas = Venda.query.options(joinedload(Venda.produto_relacionado)).filter_by(mes_numero=mes_numero, ano=ano).all()
     soma_mensal = sum(venda.total for venda in vendas)
     quantidade_mensal = sum(venda.quantidade for venda in vendas)
 
@@ -301,17 +303,24 @@ def relatorio_mensal_anterior():
 def relatorios_historicos():
     relatorios = (
         db.session.query(
-            Venda.mes,
+            Venda.mes_numero,
             Venda.ano,
             db.func.sum(Venda.quantidade).label('quantidade_vendida'),
             db.func.sum(Venda.total).label('soma_mensal')
         )
-        .group_by(Venda.mes, Venda.ano)
-        .order_by(Venda.ano, Venda.mes)
+        .group_by(Venda.mes_numero, Venda.ano)
+        .order_by(Venda.ano, Venda.mes_numero)
         .all()
     )
-    return render_template('relatorios_historicos.html', relatorios=relatorios)
 
+    # Converte o número do mês para o nome em português
+    relatorios_formatados = []
+    for relatorio in relatorios:
+        mes_numero, ano, quantidade_vendida, soma_mensal = relatorio
+        mes = MESES[mes_numero - 1]
+        relatorios_formatados.append((mes, ano, quantidade_vendida, soma_mensal))
+
+    return render_template('relatorios_historicos.html', relatorios=relatorios_formatados)
 
 # Excluir produto
 @app.route('/excluir_produto/<int:produto_id>', methods=['GET'])
