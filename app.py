@@ -47,8 +47,8 @@ class Venda(db.Model):
     preco = db.Column(db.Float, nullable=False)
     total = db.Column(db.Float, nullable=False)
     data = db.Column(db.Date, nullable=False)
-    mes_numero = db.Column(db.Integer, nullable=False)  # Novo campo: número do mês (1 a 12)
-    mes = db.Column(db.String(20), nullable=False)  # Mantenha o campo atual para compatibilidade
+    mes_numero = db.Column(db.Integer, nullable=False)  # Novo campo
+    mes = db.Column(db.String(20), nullable=False)  # Mantido para compatibilidade
     ano = db.Column(db.Integer, nullable=False)
 
     produto_relacionado = db.relationship('Produto')
@@ -312,6 +312,15 @@ def relatorios_historicos():
         .order_by(Venda.ano, Venda.mes_numero)
         .all()
     )
+
+    # Converte o número do mês para o nome em português
+    relatorios_formatados = []
+    for relatorio in relatorios:
+        mes_numero, ano, quantidade_vendida, soma_mensal = relatorio
+        mes = MESES[mes_numero - 1]
+        relatorios_formatados.append((mes, ano, quantidade_vendida, soma_mensal))
+
+    return render_template('relatorios_historicos.html', relatorios=relatorios_formatados)
 
     # Converte o número do mês para o nome em português
     relatorios_formatados = []
