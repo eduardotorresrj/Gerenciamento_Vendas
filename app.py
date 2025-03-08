@@ -7,9 +7,7 @@ import os
 import locale
 
 
-locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')  # Usar um locale padrão
-
-
+locale.setlocale(locale.LC_TIME, 'C.UTF-8')  # Usar um locale padrão disponível
 
 
 app: Flask = Flask(__name__)
