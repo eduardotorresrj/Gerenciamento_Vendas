@@ -3,15 +3,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from datetime import datetime, timedelta, timezone, date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
-import locale
 import os
+import locale
 
-# Tenta configurar o locale pt_BR.UTF-8
-try:
-    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
-except locale.Error:
-    # Se não estiver disponível, usa um locale padrão
-    locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')
+
+locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')  # Usar um locale padrão
+
 
 
 
