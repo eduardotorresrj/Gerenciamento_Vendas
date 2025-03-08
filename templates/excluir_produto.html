@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block title %}Excluir Produto{% endblock %}
+
+{% block content %}
+<h1>Excluir Produto: {{ produto.nome }}</h1>
+<p><strong>Tem certeza de que deseja excluir o produto "{{ produto.nome }}"?</strong></p>
+
+<!-- Formulário de Exclusão -->
+<form method="GET" action="{{ url_for('excluir_produto', produto_id=produto.id) }}">
+    <button type="submit" class="btn btn-danger">Excluir</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

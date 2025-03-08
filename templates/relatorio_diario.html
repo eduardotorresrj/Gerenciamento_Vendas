@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block title %}Relatório Diário{% endblock %}
+
+{% block content %}
+<h1>Relatório Diário</h1>
+
+<!-- Formulário para selecionar a data -->
+<form method="GET" action="{{ url_for('relatorio_diario') }}" class="mb-3">
+    <label for="data_consulta"><strong>Selecionar Data:</strong></label>
+    <input type="date" id="data_consulta" name="data" value="{{ data_consulta }}" class="form-control" required>
+    <button type="submit" class="btn btn-info mt-2">Filtrar</button>
+</form>
+
+<p><strong>Data do Relatório:</strong> {{ hoje }}</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Nome do Produto</th>
+            <th>Quantidade Vendida</th>
+            <th>Preço Unitário (R$)</th>
+            <th>Total (R$)</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for venda in vendas_do_dia %}
+    <tr>
+        <td>{{ venda.produto_relacionado.nome }}</td>
+        <td>{{ venda.quantidade }}</td>
+        <td>R$ {{ "%.2f"|format(venda.preco) }}</td>
+        <td>R$ {{ "%.2f"|format(venda.total) }}</td>
+        <td>
+            <form method="POST" action="{{ url_for('excluir_venda', venda_id=venda.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir esta venda?');">
+                <button type="submit" class="btn btn-danger">Excluir</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+<p><strong>Total Vendido:</strong> R$ {{ "%.2f"|format(soma_diaria) }}</p>
+<p><strong>Total de Produtos Vendidos:</strong> {{ quantidade_vendida }}</p>
+<a href="{{ url_for('index') }}" class="btn btn-primary">Voltar</a>
+{% endblock %}

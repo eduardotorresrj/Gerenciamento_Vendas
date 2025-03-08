@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block title %}Selecionar Linha{% endblock %}
+
+{% block content %}
+<h1>Escolha a Linha do Produto</h1>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="linha">Linha do Produto</label>
+        <select id="linha" name="linha" class="form-control" required>
+            <option value="" disabled selected>Selecione uma linha</option>
+            {% for linha in linhas %}
+                <option value="{{ linha }}">{{ linha }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Próximo</button>
+</form>
+{% endblock %}

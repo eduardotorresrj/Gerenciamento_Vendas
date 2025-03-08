@@ -1,0 +1,19 @@
+<!-- selecionar_produto.html -->
+{% extends "layout.html" %}
+
+{% block title %}Selecionar Produto{% endblock %}
+
+{% block content %}
+<h1>Escolha o Produto da Linha "{{ linha }}"</h1>
+<form method="POST">
+    <div class="form-group">
+        <label for="produto">Produto</label>
+        <select name="produto" id="produto" class="form-control">
+            {% for produto in produtos %}
+                <option value="{{ produto.id }}">{{ produto.nome }} - R$ {{ "%.2f"|format(produto.preco) }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Escolher Produto</button>
+</form>
+{% endblock %}

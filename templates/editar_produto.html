@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}Editar Produto{% endblock %}
+
+{% block content %}
+<h1>Editar Produto</h1>
+<form method="POST">
+    <div class="form-group">
+        <label for="nome">Nome do Produto</label>
+        <input type="text" id="nome" name="nome" class="form-control" value="{{ produto.nome }}" required>
+    </div>
+    <div class="form-group">
+        <label for="preco">Preço Unitário</label>
+        <input type="number" id="preco" name="preco" class="form-control" step="0.01" value="{{ produto.preco }}" required>
+    </div>
+    <div class="form-group">
+        <label for="quantidade">Quantidade Atual</label>
+        <input type="number" id="quantidade" name="quantidade" class="form-control" value="{{ produto.quantidade }}" required>
+    </div>
+    <div class="form-group">
+        <label for="quantidade_inicial">Quantidade Inicial</label>
+        <input type="number" id="quantidade_inicial" name="quantidade_inicial" class="form-control" value="{{ produto.quantidade_inicial }}" required>
+    </div>
+    <button type="submit" class="btn btn-success">Salvar Alterações</button>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Voltar</a>
+</form>
+{% endblock %}

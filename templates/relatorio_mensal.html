@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block title %}Relatório Mensal{% endblock %}
+
+{% block content %}
+<h1>Relatório Mensal</h1>
+<p><strong>Período:</strong> {{ titulo_mensal }}</p>
+
+{% if vendas_do_mes %}
+<table class="table table-bordered table-striped">
+    <thead class="thead-dark">
+        <tr>
+            <th>Nome do Produto</th>
+            <th>Quantidade Vendida</th>
+            <th>Preço Unitário (R$)</th>
+            <th>Total (R$)</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for venda in vendas_do_mes %}
+        <tr>
+            <td>{{ venda.produto_relacionado.nome }}</td>
+            <td>{{ venda.quantidade }}</td>
+            <td>R$ {{ "%.2f"|format(venda.preco) }}</td>
+            <td>R$ {{ "%.2f"|format(venda.total) }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('excluir_venda', venda_id=venda.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir esta venda?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info" role="alert">
+    Nenhuma venda registrada para o período selecionado.
+</div>
+{% endif %}
+
+<p><strong>Total Vendido:</strong> R$ {{ "%.2f"|format(soma_mensal) }}</p>
+<p><strong>Total de Produtos Vendidos:</strong> {{ quantidade_mensal }}</p>
+
+<a href="{{ url_for('index') }}" class="btn btn-primary">Voltar</a>
+{% endblock %}

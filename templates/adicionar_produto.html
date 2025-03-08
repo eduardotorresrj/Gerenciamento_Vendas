@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}Adicionar Produto{% endblock %}
+
+{% block content %}
+<!--suppress ALL -->
+<h1>Adicionar Produto</h1>
+<form method="POST">
+    <div class="form-group">
+        <label for="nome">Nome do Produto</label>
+        <input type="text" id="nome" name="nome" class="form-control" required>
+    </div>
+    <div class="form-group">
+        <label for="preco">Preço Unitário</label>
+        <input type="number" id="preco" name="preco" class="form-control" step="0.01" required>
+    </div>
+    <div class="form-group">
+        <label for="quantidade">Quantidade</label>
+        <input type="number" id="quantidade" name="quantidade" class="form-control" required>
+    </div>
+    <div class="form-group">
+        <label for="linha">Linha do Produto</label>
+        <input type="text" id="linha" name="linha" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-success">Salvar</button>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Voltar</a>
+</form>
+{% endblock %}

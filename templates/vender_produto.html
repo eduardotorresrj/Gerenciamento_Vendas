@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}Vender Produto{% endblock %}
+
+{% block content %}
+<h1>Vender Produto: {{ produto.nome }}</h1>
+
+<form method="POST">
+    <div class="form-group">
+        <label for="quantidade_venda">Quantidade a Vender</label>
+        <input type="number" id="quantidade_venda" name="quantidade_venda" class="form-control"
+               max="{{ produto.quantidade }}" min="1" required>
+    </div>
+
+    <!-- Exibe o estoque no formato "quantidade_inicial - quantidade_atual" -->
+    <p>Estoque: {{ estoque_inicial }} - {{ produto.quantidade }}</p>
+
+    <!-- Campo opcional para selecionar a data da venda -->
+    <div class="form-group">
+        <label for="data_venda">Data da Venda (opcional)</label>
+        <input type="date" id="data_venda" name="data_venda" class="form-control"
+               max="{{ hoje }}" value="{{ hoje }}">
+        <small class="form-text text-muted">Se não informado, a venda será registrada com a data de hoje.</small>
+    </div>
+
+    <button type="submit" class="btn btn-success">Confirmar Venda</button>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Voltar</a>
+</form>
+
+{% endblock %}
