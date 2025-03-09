@@ -72,6 +72,14 @@ class RelatorioMensal(db.Model):
     soma_mensal = db.Column(db.Float, nullable=False)
 
 with app.app_context():
+    vendas = Venda.query.all()
+    for venda in vendas:
+        venda.mes = MESES[venda.mes_numero - 1]  # Garante que o nome do mês fique sempre em português
+    db.session.commit()
+    print("Nomes dos meses padronizados para português.")
+
+
+with app.app_context():
     # Verifica se a coluna `mes_numero` já existe na tabela `venda`
     inspector = db.inspect(db.engine)
     columns = inspector.get_columns('venda')
@@ -196,7 +204,6 @@ def editar_produto(produto_id):
 @app.route('/vender_produto/<int:produto_id>', methods=['GET', 'POST'])
 def vender_produto(produto_id):
     produto = Produto.query.get_or_404(produto_id)
-    estoque_inicial = produto.quantidade
     hoje = datetime.today().date()
 
     if request.method == 'POST':
@@ -217,9 +224,9 @@ def vender_produto(produto_id):
             else:
                 data_venda = hoje
 
-            # Salva o número do mês (1 a 12) e o nome do mês em português
+            # Forçar o nome do mês em português
             mes_numero = data_venda.month
-            mes = MESES[mes_numero - 1]  # Usa a lista de meses em português
+            mes = MESES[mes_numero - 1]  # Garantindo a consistência
 
             venda = Venda(
                 produto_id=produto.id,
@@ -227,8 +234,8 @@ def vender_produto(produto_id):
                 preco=produto.preco,
                 total=quantidade_venda * produto.preco,
                 data=data_venda,
-                mes_numero=mes_numero,  # Novo campo
-                mes=mes,  # Mantido para compatibilidade
+                mes_numero=mes_numero,
+                mes=mes,  # Agora sempre em português
                 ano=data_venda.year
             )
             db.session.add(venda)
@@ -237,7 +244,8 @@ def vender_produto(produto_id):
             flash('Venda registrada com sucesso!', 'success')
             return redirect(url_for('index'))
 
-    return render_template('vender_produto.html', produto=produto, estoque_inicial=estoque_inicial, hoje=hoje)
+    return render_template('vender_produto.html', produto=produto, hoje=hoje)
+
 
 
 
@@ -332,22 +340,13 @@ def relatorios_historicos():
     )
 
     # Converte o número do mês para o nome em português
-    relatorios_formatados = []
-    for relatorio in relatorios:
-        mes_numero, ano, quantidade_vendida, soma_mensal = relatorio
-        mes = MESES[mes_numero - 1]
-        relatorios_formatados.append((mes, ano, quantidade_vendida, soma_mensal))
+    relatorios_formatados = [
+        (MESES[mes_numero - 1], ano, quantidade_vendida, soma_mensal)
+        for mes_numero, ano, quantidade_vendida, soma_mensal in relatorios
+    ]
 
     return render_template('relatorios_historicos.html', relatorios=relatorios_formatados)
 
-    # Converte o número do mês para o nome em português
-    relatorios_formatados = []
-    for relatorio in relatorios:
-        mes_numero, ano, quantidade_vendida, soma_mensal = relatorio
-        mes = MESES[mes_numero - 1]
-        relatorios_formatados.append((mes, ano, quantidade_vendida, soma_mensal))
-
-    return render_template('relatorios_historicos.html', relatorios=relatorios_formatados)
 
 # Excluir produto
 @app.route('/excluir_produto/<int:produto_id>', methods=['GET'])
